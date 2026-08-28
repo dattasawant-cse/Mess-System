@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mess Payment Reminder</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:'Poppins',sans-serif;
+  background:linear-gradient(270deg,#667eea,#764ba2,#43cea2,#d4d664);
+  background-size:800% 800%;
+  animation:gradientShift 15s ease infinite;
+  color:#333;
+  min-height:100vh;
+  padding:20px;
+  overflow-x:hidden;
+}
+
+@keyframes gradientShift{
+  0%{background-position:0% 50%;}
+  50%{background-position:100% 50%;}
+  100%{background-position:0% 50%;}
+}
+
+header{
+  text-align:center;
+  margin-bottom:25px;
+  color:rgb(224,177,22);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+header .left{
+  flex:1;
+  text-align:center;
+}
+
+header h1{
+  font-size:2.2em;
+  font-weight:700;
+}
+
+#dateTimeDisplay{
+  font-size:0.95em;
+  background:rgba(255,255,255,0.15);
+  padding:8px 18px;
+  border-radius:15px;
+  display:inline-block;
+  margin-top:6px;
+  color:white;
+}
+
+#logoutBtn{
+  background:linear-gradient(135deg,#ff5252,#ff1744);
+  color:white;
+  border:none;
+  padding:8px 12px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+}
+
+.stat-card{
+  background:rgba(226, 234, 193, 0.95);
+  padding:25px;
+  border-radius:15px;
+  min-width:240px;
+  text-align:center;
+  margin:10px;
+  box-shadow:0 8px 18px rgba(0,0,0,0.2);
+}
+
+.search-filter{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+  gap:10px;
+}
+
+#searchInput{
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  width:280px;
+  outline:none;
+}
+
+button{
+  background:linear-gradient(135deg,#4CAF50,#2E8B57);
+  color:white;
+  border:none;
+  padding:10px 20px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+#backBtn,
+#backBtnPaid,
+#backBtnRemaining{
+  display:none;
+  background:orange;
+}
+
+.customers-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:20px;
+}
+
+.customer-card{
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 6px 14px rgba(0,0,0,0.15);
+}
+
+.customer-card.overdue{
+  border-left:6px solid #f44336;
+  background:#ffebee;
+}
+
+.customer-card h3{
+  margin-bottom:10px;
+}
+
+.customer-card p{
+  margin:5px 0;
+}
+
+.paid{
+  color:#4CAF50;
+  text-decoration:line-through;
+}
+
+.actions{
+  margin-top:15px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.actions button{
+  padding:6px 12px;
+  font-size:.9em;
+  background:#2196F3;
+}
+
+.actions .delete{
+  background:#f44336;
+}
+
+.modal{
+  display:none;
+  position:fixed;
+  z-index:1000;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.5);
+}
+
+.modal-content{
+  background:white;
+  margin:10% auto;
+  padding:25px;
+  border-radius:12px;
+  width:80%;
+  max-width:400px;
+  position:relative;
+}
+
+.close{
+  position:absolute;
+  top:10px;
+  right:15px;
+  font-size:28px;
+  cursor:pointer;
+}
+
+#customerForm{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+#customerForm input{
+  padding:10px;
+  border:1px solid #ddd;
+  border-radius:6px;
+}
+
+.toast{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:black;
+  color:white;
+  padding:15px 20px;
+  border-radius:8px;
+  display:none;
+  z-index:2000;
+}
+
+#loginOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.65);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:3000;
+}
+
+.login-box{
+  background:white;
+  padding:28px;
+  border-radius:12px;
+  width:360px;
+}
+
+.login-box form{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.login-box input{
+  padding:10px;
+}
+
+/* QR PAYMENT MODAL */
+
+#qrModal .modal-content{
+  text-align:center;
+}
+
+#qrImage{
+  width:220px;
+  height:220px;
+  margin:15px auto;
+  display:block;
+  border-radius:12px;
+  border:4px solid #eee;
+}
+
+.upi-id{
+  font-weight:600;
+  margin-top:10px;
+  color:#4CAF50;
+  word-break:break-all;
+}
+
+
+/* DARK MODE */
+
+body.dark-mode{
+  background:#121212;
+  color:white;
+}
+
+body.dark-mode .stat-card,
+body.dark-mode .customer-card,
+body.dark-mode .modal-content,
+body.dark-mode .login-box{
+  background:#1e1e1e;
+  color:white;
+}
+
+body.dark-mode input{
+  background:#2b2b2b;
+  color:white;
+  border:1px solid #555;
+}
+
+body.dark-mode .customer-card.overdue{
+  background:#4b1c1c;
+}
+
+#darkModeBtn{
+  background:#222;
+}
+
+@media(max-width:768px){
+
+  .stats{
+    flex-direction:column;
+    align-items:center;
+  }
+
+  .customers-grid{
+    grid-template-columns:1fr;
+  }
+
+}
+</style>
+</head>
+
+<body>
+
+<header>
+
+  <div class="border-left">
+<h2 style="color: #121212;"> Address: </h2>
+     <h3 class="right"> Boyes Hostal, </h>
+<h3>ST coline,</h3>
+<h3>Tuljapur</h3>
+  </div>
+
+  <div class="left">
+
+    <h1 style="color:#500303;">
+     🧑‍🍳Mess🍛Payment💵System
+    </h1>
+
+    <div id="dateTimeDisplay">
+      📅 Date: -- | 🕒 Time: --
+    </div>
+
+    <h2 style="color:#d5ff02;">
+      "# Quality & Quantity"
+    </h2>
+
+  </div>
+
+  <div style="display:flex;gap:10px;align-items:center;">
+
+    <button id="darkModeBtn">
+      🌙 Dark Mode
+    </button>
+
+    <div id="headerRight"></div>
+
+  </div>
+
+</header>
+
+<!-- LOGIN -->
+<div id="loginOverlay">
+
+  <div class="login-box">
+
+    <h2>Owner Login</h2>
+
+    <form id="loginForm">
+
+      <input id="loginUser" type="text" placeholder="Username" required>
+
+      <input id="loginPass" type="password" placeholder="Password" required>
+
+      <button type="submit">Login</button>
+
+    </form>
+
+  </div>
+
+</div>
+
+<!-- MAIN -->
+<main id="appMain" style="display:none;">
+
+<section id="dashboard">
+
+<div class="stats">
+
+<div class="stat-card">
+  <h3>Total Summary</h3>
+  <p id="totalCustomers">Customers: 0</p>
+  <p id="totalFees">Total Fees: ₹0</p>
+</div>
+
+<div class="stat-card">
+  <h3>Paid Fees</h3>
+  <p id="paidCount">Paid Customers: 0</p>
+  <p id="paidFees">₹0</p>
+
+  <button id="showPaidBtn">
+    Show Paid Customers
+  </button>
+
+  <button id="backBtnPaid">
+    Back
+  </button>
+</div>
+
+<div class="stat-card">
+  <h3>Remaining Fees</h3>
+  <p id="remainingCount">Remaining Customers: 0</p>
+  <p id="remainingAmount">₹0</p>
+
+  <button id="showRemainingBtn">
+    Show Remaining Customers
+  </button>
+
+  <button id="backBtnRemaining">
+    Back
+  </button>
+</div>
+
+
+<div class="stat-card">
+  <h3>Overdue Fees</h3>
+
+  <p id="overdueCount">
+    Overdue customer: 0
+  </p>
+
+  <p id="overdueAmount">
+    ₹0
+  </p>
+
+  <button id="showOverdueBtn">
+    Show Overdue Customers
+  </button>
+
+  <button id="backBtn">
+    Back
+  </button>
+
+  <!-- Lunch Dish Photo -->
+  <img
+    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRa44ExZD15bW2x_3Kpc_siaaiIW9K8Ui2pCQ&s"
+    alt="Special Lunch"
+    style="
+      width:100%;
+      height:180px;
+      object-fit:cover;
+      border-radius:10px;
+      margin-top:12px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    "
+  >
+
+  <p style="margin-top:8px;font-weight:600;">
+
+  </p>
+</div>
+
+
+<!-- ANALYTICS -->
+<div class="stat-card">
+
+  <h3>Analytics 📊</h3>
+
+  <p id="collectionRate">
+    Collection Rate: 0%
+  </p>
+
+  <p id="pendingRate">
+    Pending Rate: 0%
+  </p>
+
+  <canvas id="analyticsChart"
+  style="margin-top:10px;max-height:220px;">
+  </canvas>
+
+</div>
+
+<div class="stat-card">
+
+<h3>🍱 Weekly Lunch Menu</h3>
+
+<table style="width:100%;text-align:left;margin-top:10px;">
+<tr><td>Monday</td><td>🍛 Veg Thali</td></tr>
+<tr><td>Tuesday</td><td>🧀 Paneer Special</td></tr>
+<tr><td>Wednesday</td><td>🍚 Veg Pulao</td></tr>
+<tr><td>Thursday</td><td>🥣 Dal Khichdi</td></tr>
+<tr><td>Friday</td><td>🍽️ Special Thali</td></tr>
+<tr><td>Saturday</td><td>🍲 Veg Biryani</td></tr>
+<tr><td>Sunday</td><td>🎉 Sunday Special</td></tr>
+</table>
+
+<img
+src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=500"
+style="
+width:100%;
+height:180px;
+object-fit:cover;
+border-radius:10px;
+margin-top:10px;
+">
+
+</div>
+</div>
+
+
+<div class="stat-card">
+
+  <h3>🍳 Weekly Breakfast Menu</h3>
+
+  <table style="
+    width:100%;
+    text-align:left;
+    margin-top:10px;
+  ">
+
+    <tr>
+      <td>Monday</td>
+      <td>🥣 Poha</td>
+    </tr>
+
+    <tr>
+      <td>Tuesday</td>
+      <td>🍲 Upma</td>
+    </tr>
+
+    <tr>
+      <td>Wednesday</td>
+      <td>🍮 Sheera</td>
+    </tr>
+
+    <tr>
+      <td>Thursday</td>
+      <td>🥥 Idli & Chutney</td>
+    </tr>
+
+    <tr>
+      <td>Friday</td>
+      <td>☕ Poha + Tea</td>
+    </tr>
+
+    <tr>
+      <td>Saturday</td>
+      <td>🌶️ Misal Pav</td>
+    </tr>
+
+    <tr>
+      <td>Sunday</td>
+      <td>🎉 Special Breakfast</td>
+    </tr>
+
+  </table>
+
+</div>
+
+
+<div class="search-filter">
+
+<input
+type="text"
+id="searchInput"
+placeholder="Search by name..."
+>
+
+<div class="button-group">
+
+  <button id="addCustomerBtn">
+    Add Customer
+  </button>
+
+  <button id="exportBtn">
+    Export Data
+  </button>
+
+</div>
+
+</div>
+
+<div id="customersList" class="customers-grid"></div>
+
+</section>
+
+<!-- MODAL -->
+<div id="customerModal" class="modal">
+
+<div class="modal-content">
+
+<span class="close">&times;</span>
+
+<h2 id="modalTitle">Add Customer</h2>
+
+<form id="customerForm">
+
+<input type="hidden" id="editId">
+
+<input
+type="text"
+id="name"
+name="name"
+placeholder="Customer Name"
+required
+>
+
+<input
+type="tel"
+id="mobile"
+name="mobile"
+placeholder="Mobile Number"
+pattern="[0-9]{10}"
+maxlength="10"
+required
+>
+
+<input
+type="number"
+id="dueAmount"
+name="dueAmount"
+placeholder="Due Amount (₹)"
+required
+>
+
+<input
+type="date"
+id="dueDate"
+name="dueDate"
+required
+>
+
+<label style="display:flex;align-items:center;gap:8px;">
+
+<input type="checkbox" id="paidStatus" name="paidStatus">
+
+Payment Paid
+
+</label>
+
+<button type="submit">Save</button>
+
+</form>
+
+</div>
+
+</div>
+
+<!-- QR PAYMENT MODAL -->
+
+<div id="qrModal" class="modal">
+
+  <div class="modal-content">
+
+    <span class="close" onclick="closeQRModal()">&times;</span>
+
+    <h2>Scan & Pay</h2>
+
+    <img id="qrImage" src="" alt="QR Code">
+
+    <p id="qrCustomerName"></p>
+
+    <p id="qrAmount"></p>
+
+    <div class="upi-id">
+      UPI ID: yourupi@upi
+    </div>
+
+  </div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+
+
+const VALID_USERNAME = 'STBCET';
+const VALID_PASSWORD = '123@';
+
+let customers =
+JSON.parse(localStorage.getItem('messCustomers')) || [];
+
+let editId = null;
+
+let showingOverdue = false;
+let showingPaid = false;
+let showingRemaining = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  setupAuthUI();
+
+  updateDateTime();
+
+  setInterval(updateDateTime, 1000);
+
+  if (sessionStorage.getItem('loggedIn') === 'true') {
+
+    showAppAfterLogin();
+
+  }
+
+});
+
+function setupAuthUI() {
+
+  const loginForm =
+  document.getElementById('loginForm');
+
+  loginForm.addEventListener('submit', (e) => {
+
+    e.preventDefault();
+
+    const u =
+    loginUser.value.trim();
+
+    const p =
+    loginPass.value;
+
+    if (u === VALID_USERNAME && p === VALID_PASSWORD) {
+
+      sessionStorage.setItem('loggedIn','true');
+
+      sessionStorage.setItem('username', u);
+
+      showToast('✅ Login successful');
+
+      showAppAfterLogin();
+
+    } else {
+
+      showToast('❌ Invalid credentials');
+
+    }
+
+  });
+
+}
+
+function showAppAfterLogin(){
+
+  document.getElementById('loginOverlay')
+  .style.display = 'none';
+
+  document.getElementById('appMain')
+  .style.display = 'block';
+
+  setupHeaderAfterLogin();
+
+  updateDashboard();
+
+  renderCustomers();
+
+  setupEventListeners();
+
+}
+
+function setupHeaderAfterLogin(){
+
+  const headerRight =
+  document.getElementById('headerRight');
+
+  const username =
+  sessionStorage.getItem('username');
+
+  headerRight.innerHTML = `
+    <div style="color:white;font-weight:600;margin-bottom:6px">
+      Owner: ${username}
+    </div>
+
+    <button id="logoutBtn">
+      Logout
+    </button>
+  `;
+
+  document.getElementById('logoutBtn')
+  .addEventListener('click', () => {
+
+    sessionStorage.clear();
+
+    location.reload();
+
+  });
+
+}
+
+function updateDateTime(){
+
+  const now = new Date();
+
+  const date =
+  now.toLocaleDateString();
+
+  const time =
+  now.toLocaleTimeString();
+
+  document.getElementById('dateTimeDisplay')
+  .textContent =
+  `📅 Date: ${date} | 🕒 Time: ${time}`;
+
+}
+
+function setupEventListeners() {
+
+  document.getElementById('addCustomerBtn')
+  .addEventListener('click', () => openModal(null));
+
+  document.getElementById('exportBtn')
+  .addEventListener('click', exportData);
+
+  document.getElementById('showOverdueBtn')
+  .addEventListener('click', showOverdueCustomers);
+
+  document.getElementById('showPaidBtn')
+  .addEventListener('click', showPaidCustomers);
+
+  document.getElementById('showRemainingBtn')
+  .addEventListener('click', showRemainingCustomers);
+
+  document.getElementById('backBtn')
+  .addEventListener('click', showAllCustomers);
+
+  document.getElementById('backBtnPaid')
+  .addEventListener('click', showAllCustomers);
+
+  document.getElementById('backBtnRemaining')
+  .addEventListener('click', showAllCustomers);
+
+  document.querySelector('.close')
+  .addEventListener('click', closeModal);
+
+  document.getElementById('customerForm')
+  .addEventListener('submit', saveCustomer);
+
+  document.getElementById('searchInput')
+  .addEventListener('input', renderCustomers);
+
+}
+
+function openModal(id) {
+
+  editId = id;
+
+  const modal =
+  document.getElementById('customerModal');
+
+  modal.style.display = 'block';
+
+  const form =
+  document.getElementById('customerForm');
+
+  if (id) {
+
+    const c =
+    customers.find(x => x.id === id);
+
+    form.name.value = c.name;
+
+    form.mobile.value = c.mobile || '';
+
+    form.dueAmount.value = c.dueAmount;
+
+    form.dueDate.value = c.dueDate;
+
+    form.paidStatus.checked = c.paid;
+
+    document.getElementById('modalTitle')
+    .textContent = "Edit Customer";
+
+    document.getElementById('editId')
+    .value = id;
+
+  } else {
+
+    form.reset();
+
+    document.getElementById('modalTitle')
+    .textContent = "Add Customer";
+
+    document.getElementById('editId')
+    .value = '';
+
+  }
+
+}
+
+function closeModal() {
+
+  document.getElementById('customerModal')
+  .style.display = 'none';
+
+  editId = null;
+
+}
+
+function saveCustomer(e) {
+
+  e.preventDefault();
+
+  const form = e.target;
+
+  const currentEditId =
+  document.getElementById('editId').value;
+
+  const data = {
+
+    id:
+    currentEditId
+    ? parseInt(currentEditId)
+    : Date.now(),
+
+    name:
+    form.name.value.trim(),
+
+    mobile:
+    form.mobile.value.trim(),
+
+    dueAmount:
+    parseFloat(form.dueAmount.value) || 0,
+
+    dueDate:
+    form.dueDate.value,
+
+    paid:
+    form.paidStatus.checked
+
+  };
+
+  if (currentEditId) {
+
+    const i =
+    customers.findIndex(c => c.id === data.id);
+
+    if (i > -1)
+    customers[i] = data;
+
+  } else {
+
+    customers.push(data);
+
+  }
+
+  localStorage.setItem(
+    'messCustomers',
+    JSON.stringify(customers)
+  );
+
+  closeModal();
+
+  updateDashboard();
+
+  renderCustomers();
+
+  showToast("Customer saved!");
+
+}
+
+function renderCustomers() {
+
+  const now = new Date();
+
+  const search =
+  document.getElementById('searchInput')
+  .value.toLowerCase();
+
+  let list = customers;
+
+  if (showingOverdue) {
+
+    list = customers.filter(c =>
+      !c.paid &&
+      new Date(c.dueDate) < now
+    );
+
+  } else if (showingPaid) {
+
+    list = customers.filter(c => c.paid);
+
+  } else if (showingRemaining) {
+
+    list = customers.filter(c => !c.paid);
+
+  }
+
+  const filtered = list.filter(c =>
+    c.name.toLowerCase().includes(search)
+  );
+
+  document.getElementById('customersList')
+  .innerHTML = filtered.map(c => {
+
+    const due = new Date(c.dueDate);
+
+    const diff = due - now;
+
+    let info = "";
+
+    if (c.paid) {
+
+      info = "Paid";
+
+    } else if (diff < 0) {
+
+      const days = Math.ceil(
+        Math.abs(diff)/(1000*60*60*24)
+      );
+
+      info = `Overdue by ${days} days`;
+
+    } else {
+
+      const days = Math.floor(
+        diff/(1000*60*60*24)
+      );
+
+      info = `${days} days left`;
+
+    }
+
+    return `
+    <div class="customer-card ${diff<0&&!c.paid?'overdue':''} ${c.paid?'paid':''}">
+
+      <h3>${c.name}</h3>
+
+      <p>📱 Mobile: ${c.mobile || 'N/A'}</p>
+
+      <p>💰 Amount: ₹${c.dueAmount}</p>
+
+      <p>📅 Due Date: ${c.dueDate}</p>
+
+      <p>📌 Status: ${c.paid?'Paid':'Pending'}</p>
+
+      <p>${info}</p>
+
+      <div class="actions">
+
+        <button onclick="togglePayment(${c.id})">
+          ${c.paid?'Mark Unpaid':'Mark Paid'}
+        </button>
+
+        <button onclick="openModal(${c.id})">
+          Edit
+        </button>
+
+        <button onclick="sendWhatsApp('${c.mobile}','${c.name}',${c.dueAmount})">
+          WhatsApp
+        </button>
+
+          <button onclick="openQRPayment('${c.name}',${c.dueAmount})">
+          QR Pay
+        </button>
+
+        <button class="delete"
+        onclick="deleteCustomer(${c.id})">
+          Delete
+        </button>
+
+      </div>
+
+    </div>
+    `;
+
+  }).join('');
+
+}
+
+function showOverdueCustomers(){
+
+  showingOverdue = true;
+
+  showingPaid = false;
+
+  showingRemaining = false;
+
+  renderCustomers();
+
+  document.getElementById('backBtn')
+  .style.display = "inline-block";
+
+}
+
+function showPaidCustomers(){
+
+  showingPaid = true;
+
+  showingOverdue = false;
+
+  showingRemaining = false;
+
+  renderCustomers();
+
+  document.getElementById('backBtnPaid')
+  .style.display = "inline-block";
+
+}
+
+function showRemainingCustomers(){
+
+  showingRemaining = true;
+
+  showingOverdue = false;
+
+  showingPaid = false;
+
+  renderCustomers();
+
+  document.getElementById('backBtnRemaining')
+  .style.display = "inline-block";
+
+}
+
+function showAllCustomers(){
+
+  showingOverdue = false;
+
+  showingPaid = false;
+
+  showingRemaining = false;
+
+  renderCustomers();
+
+  document.getElementById('backBtn')
+  .style.display = "none";
+
+  document.getElementById('backBtnPaid')
+  .style.display = "none";
+
+  document.getElementById('backBtnRemaining')
+  .style.display = "none";
+
+}
+
+function togglePayment(id) {
+
+  const c =
+  customers.find(x => x.id === id);
+
+  c.paid = !c.paid;
+
+  localStorage.setItem(
+    'messCustomers',
+    JSON.stringify(customers)
+  );
+
+  renderCustomers();
+
+  updateDashboard();
+
+}
+
+function deleteCustomer(id) {
+
+  if (!confirm("Delete this customer?"))
+  return;
+
+  customers =
+  customers.filter(c => c.id !== id);
+
+  localStorage.setItem(
+    'messCustomers',
+    JSON.stringify(customers)
+  );
+
+  renderCustomers();
+
+  updateDashboard();
+
+}
+
+/* WHATSAPP FEATURE */
+
+function sendWhatsApp(mobile,name,amount){
+
+  const message =
+  `Hello ${name},
+Your mess payment of ₹${amount} is pending.
+Please pay soon.`;
+
+  const url =
+  `https://wa.me/91${mobile}?text=${encodeURIComponent(message)}`;
+
+  window.open(url,'_blank');
+
+}
+
+/* QR PAYMENT FEATURE */
+
+
+const UPI_ID = "8055661638@ibl"; // CHANGE THIS TO YOUR REAL UPI ID
+
+function openQRPayment(name, amount){
+
+  const upiLink =
+  `upi://pay?pa=${UPI_ID}&pn=Mess Payment&tn=${encodeURIComponent(name)}&am=${amount}&cu=INR`;
+
+  const qrURL =
+  `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiLink)}`;
+
+  document.getElementById('qrImage').src = qrURL;
+
+  document.getElementById('qrCustomerName')
+  .textContent = `Customer: ${name}`;
+
+  document.getElementById('qrAmount')
+  .textContent = `Amount: ₹${amount}`;
+
+  document.querySelector('.upi-id')
+  .textContent = `UPI ID: ${UPI_ID}`;
+
+  document.getElementById('qrModal')
+  .style.display = 'block';
+
+}
+
+function closeQRModal(){
+
+  document.getElementById('qrModal')
+  .style.display = 'none';
+
+}
+
+async function exportData() {
+
+  const { jsPDF } = window.jspdf;
+
+  const doc = new jsPDF();
+
+  doc.text("Mess Payment Report", 20, 20);
+
+  customers.forEach((c, i) => {
+
+    doc.text(
+      `${i+1}. ${c.name} - ₹${c.dueAmount}`,
+      20,
+      40 + (i*10)
+    );
+
+  });
+
+  doc.save("Mess_Report.pdf");
+
+}
+
+function updateDashboard() {
+
+  const paid =
+  customers.filter(c => c.paid);
+
+  const remaining =
+  customers.filter(c => !c.paid);
+
+  document.getElementById('totalCustomers')
+  .textContent =
+  `Customers: ${customers.length}`;
+
+  document.getElementById('totalFees')
+  .textContent =
+  `Total Fees: ₹${sum(customers)}`;
+
+  document.getElementById('paidCount')
+  .textContent =
+  `Paid Customers: ${paid.length}`;
+
+  document.getElementById('paidFees')
+  .textContent =
+  `₹${sum(paid)}`;
+
+  document.getElementById('remainingCount')
+  .textContent =
+  `Remaining Customers: ${remaining.length}`;
+
+  document.getElementById('remainingAmount')
+  .textContent =
+  `₹${sum(remaining)}`;
+
+}
+
+function sum(arr){
+
+  return arr.reduce(
+    (a,b) =>
+    a + (parseFloat(b.dueAmount) || 0),
+    0
+  );
+
+}
+
+function showToast(msg){
+
+  const t =
+  document.getElementById('toast');
+
+  t.textContent = msg;
+
+  t.style.display = 'block';
+
+  setTimeout(() => {
+
+    t.style.display = 'none';
+
+  }, 3000);
+
+}
+
+
+
+/*export data button*/
+
+async function exportData() {
+
+  try {
+
+    const { jsPDF } = window.jspdf;
+
+    const doc = new jsPDF({
+      orientation: "landscape"
+    });
+
+    // TITLE
+    doc.setFontSize(20);
+    doc.text("Mess Payment Report", 14, 20);
+
+    doc.setFontSize(10);
+    doc.text(
+      "Generated: " + new Date().toLocaleString(),
+      14,
+      30
+    );
+
+    // TABLE START POSITION
+    let y = 45;
+
+    // TABLE HEADERS
+    doc.setFontSize(11);
+
+    doc.setFillColor(40, 40, 40);
+    doc.setTextColor(255, 255, 255);
+
+    doc.rect(10, y - 7, 270, 10, "F");
+
+    doc.text("No", 15, y);
+    doc.text("Name", 30, y);
+    doc.text("Mobile", 90, y);
+    doc.text("Amount", 130, y);
+    doc.text("Due Date", 165, y);
+    doc.text("Status", 210, y);
+    doc.text("Remark", 240, y);
+
+    // RESET TEXT COLOR
+    doc.setTextColor(0, 0, 0);
+
+    y += 10;
+
+    // CUSTOMER DATA
+    customers.forEach((c, index) => {
+
+      const dueDate = new Date(c.dueDate);
+
+      const today = new Date();
+
+      let remark = "";
+
+      if (c.paid) {
+
+        remark = "Payment Complete";
+
+      } else if (dueDate < today) {
+
+        remark = "Overdue";
+
+      } else {
+
+        remark = "Pending";
+      }
+
+      // NEW PAGE IF NEEDED
+      if (y > 180) {
+
+        doc.addPage();
+
+        y = 20;
+
+      }
+
+      // TABLE ROW BORDER
+      doc.rect(10, y - 6, 270, 10);
+
+      doc.text(String(index + 1), 15, y);
+
+      doc.text(String(c.name), 30, y);
+
+      doc.text(String(c.mobile || "N/A"), 90, y);
+
+      doc.text("₹" + String(c.dueAmount), 130, y);
+
+      doc.text(String(c.dueDate), 165, y);
+
+      doc.text(c.paid ? "Paid" : "Pending", 210, y);
+
+      doc.text(remark, 240, y);
+
+      y += 10;
+
+    });
+
+    // TOTAL SUMMARY
+    y += 10;
+
+    doc.setFontSize(12);
+
+    doc.text(
+      "Total Customers: " + customers.length,
+      14,
+      y
+    );
+
+    y += 8;
+
+    const totalAmount =
+      customers.reduce(
+        (sum, c) => sum + Number(c.dueAmount || 0),
+        0
+      );
+
+    doc.text(
+      "Total Amount: ₹" + totalAmount,
+      14,
+      y
+    );
+
+    
+
+    // SAVE PDF
+    doc.save("Mess_Payment_Report.pdf");
+
+    showToast("✅ PDF Downloaded Successfully");
+
+  } catch (error) {
+
+    console.error(error);
+
+    showToast("❌ Export Failed");
+
+  }
+
+}
+
+function updateDashboard() {
+
+  const paid =
+  customers.filter(c => c.paid);
+
+  const remaining =
+  customers.filter(c => !c.paid);
+
+  const overdue =
+  remaining.filter(c =>
+    new Date(c.dueDate) < new Date()
+  );
+
+  document.getElementById('totalCustomers')
+  .textContent =
+  `Customers: ${customers.length}`;
+
+  document.getElementById('totalFees')
+  .textContent =
+  `Total Fees: ₹${sum(customers)}`;
+
+  document.getElementById('paidCount')
+  .textContent =
+  `Paid Customers: ${paid.length}`;
+
+  document.getElementById('paidFees')
+  .textContent =
+  `₹${sum(paid)}`;
+
+  document.getElementById('remainingCount')
+  .textContent =
+  `Remaining Customers: ${remaining.length}`;
+
+  document.getElementById('remainingAmount')
+  .textContent =
+  `₹${sum(remaining)}`;
+
+  document.getElementById('overdueCount')
+  .textContent =
+  `Overdue customer: ${overdue.length}`;
+
+  document.getElementById('overdueAmount')
+  .textContent =
+  `₹${sum(overdue)}`;
+
+  const total = customers.length;
+
+  const paidRate =
+  total
+  ? Math.round((paid.length / total) * 100)
+  : 0;
+
+  const pendingRate =
+  total
+  ? Math.round((remaining.length / total) * 100)
+  : 0;
+
+  document.getElementById('collectionRate')
+  .textContent =
+  `Collection Rate: ${paidRate}%`;
+
+  document.getElementById('pendingRate')
+  .textContent =
+  `Pending Rate: ${pendingRate}%`;
+
+}
+
+function sum(arr){
+
+  return arr.reduce(
+    (a,b) =>
+    a + (parseFloat(b.dueAmount) || 0),
+    0
+  );
+
+}
+
+function showToast(msg){
+
+  const t =
+  document.getElementById('toast');
+
+  t.textContent = msg;
+
+  t.style.display = 'block';
+
+  setTimeout(() => {
+
+    t.style.display = 'none';
+
+  }, 3000);
+
+}
+
+/* DARK MODE */
+
+const darkBtn =
+document.getElementById('darkModeBtn');
+
+darkBtn.addEventListener('click', () => {
+
+  document.body.classList.toggle('dark-mode');
+
+});
+
+/* AUTO DUE NOTIFICATION */
+
+function checkDueNotifications(){
+
+  const overdueCustomers =
+  customers.filter(c =>
+    !c.paid &&
+    new Date(c.dueDate) < new Date()
+  );
+
+  if(overdueCustomers.length > 0){
+
+    showToast(
+      `🔔 ${overdueCustomers.length} overdue payments pending`
+    );
+
+  }
+
+}
+
+setTimeout(checkDueNotifications,2000);
+
+let analyticsChart;
+
+function createAnalyticsChart(){
+
+  const paid =
+  customers.filter(c => c.paid).length;
+
+  const pending =
+  customers.filter(c => !c.paid).length;
+
+  const overdue =
+  customers.filter(c =>
+    !c.paid &&
+    new Date(c.dueDate) < new Date()
+  ).length;
+
+  const ctx =
+  document.getElementById("analyticsChart");
+
+  if(!ctx) return;
+
+  if(analyticsChart){
+    analyticsChart.destroy();
+  }
+
+  analyticsChart =
+  new Chart(ctx,{
+    type:"doughnut",
+
+    data:{
+      labels:[
+        "Paid",
+        "Pending",
+        "Overdue"
+      ],
+
+      datasets:[{
+        data:[
+          paid,
+          pending,
+          overdue
+        ]
+      }]
+    },
+
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{
+          position:"bottom"
+        }
+      }
+    }
+  });
+
+}
+
+const oldUpdateDashboard = updateDashboard;
+
+updateDashboard = function(){
+
+  oldUpdateDashboard();
+
+  createAnalyticsChart();
+
+};
+
+function loadTodayLunch(){
+
+  const day = new Date().getDay();
+
+  const lunchData = {
+
+    1:{
+      name:"Veg Thali",
+      menu:"Rice, Roti, Dal, Sabji",
+      image:"https://images.unsplash.com/photo-1613292443284-8d10ef9383fe?w=600"
+    },
+
+    2:{
+      name:"Paneer Special",
+      menu:"Paneer Masala, Roti, Rice",
+      image:"https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=600"
+    },
+
+    3:{
+      name:"Pulao Day",
+      menu:"Veg Pulao, Raita, Salad",
+      image:"https://images.unsplash.com/photo-1645177628172-a94c1f96e6db?w=600"
+    },
+
+    4:{
+      name:"Dal Khichdi",
+      menu:"Khichdi, Papad, Pickle",
+      image:"https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600"
+    },
+
+    5:{
+      name:"Special Thali",
+      menu:"Sweet, Rice, Roti, Sabji",
+      image:"https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600"
+    },
+
+    6:{
+      name:"Biryani Day",
+      menu:"Veg Biryani, Raita",
+      image:"https://images.unsplash.com/photo-1633945274405-b6c8069047b0?w=600"
+    },
+
+    0:{
+      name:"Sunday Special",
+      menu:"Full Special Meal",
+      image:"https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600"
+    }
+
+  };
+
+  const today = lunchData[day];
+
+  document.getElementById("lunchName").textContent =
+    today.name;
+
+  document.getElementById("lunchMenu").textContent =
+    today.menu;
+
+  document.getElementById("lunchImage").src =
+    today.image;
+}
+
+loadTodayLunch();
+
+</script>
+
+</body>
+</html>
